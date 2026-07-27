@@ -90,6 +90,9 @@ typedef int (*GmmStageFn)(GmmModHandle mod, GmmInstanceHandle instance,
                           GmmConflictIndexHandle conflicts, GmmProfileHandle profile,
                           void* user_data);
 
+/* ── Hook callback — generic, tag-routed ── */
+typedef void (*GmmHookFn)(const char* tag, void* data, void* user_data);
+
 /* ── Order encoding callback ── */
 typedef int (*GmmOrderEncodingFn)(const char* const* ordered_mod_ids,
                                   size_t count,
@@ -119,6 +122,21 @@ struct GmmRegistrationCtx {
                                  const char* stage_name,
                                  GmmStageFn fn,
                                  int priority);
+
+    /* Hook — additive, tag-routed, fires in priority order.
+     * Tags: "conflict_extensions" (data=comma-separated exts),
+     *        "ignored_files" (data=comma-separated names),
+     *        "workshop_id_pattern" (data=regex pattern),
+     *        "metadata_parser" (data=reserved),
+     *        "auto_sort_groups" (data=JSON groups definition),
+     *        "disable_mechanism" (data=filename to toggle).
+     */
+    void (*register_hook)(GmmRegistrationCtx* ctx,
+                          const char* tag,
+                          const char* data,
+                          GmmHookFn fn,
+                          int priority,
+                          void* user_data);
 
     /* Order encoding hook — plugins.txt / metadata.xml writer */
     void (*register_order_encoding)(GmmRegistrationCtx* ctx,
