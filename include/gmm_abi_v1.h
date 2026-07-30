@@ -107,12 +107,15 @@ typedef int (*GmmRemoveFn)(const char* target, void* user_data);
 typedef struct GmmRegistrationCtx GmmRegistrationCtx;
 
 struct GmmRegistrationCtx {
-    /* Identity — pure data, no behavior */
+    /* Identity — pure data, no behavior.
+     * display_name: human-readable game name, e.g. "Skyrim Special Edition".
+     *               The plugin passes this so the engine doesn't hardcode game names. */
     void (*register_identity)(GmmRegistrationCtx* ctx,
                               uint32_t steam_appid,
                               const char* gog_id,
                               const char* epic_namespace,
                               const char* nexus_domain,
+                              const char* display_name,
                               const char* exe_windows,
                               const char* exe_linux,
                               const char* exe_macos);
@@ -129,7 +132,8 @@ struct GmmRegistrationCtx {
      *        "workshop_id_pattern" (data=regex pattern),
      *        "metadata_parser" (data=reserved),
      *        "auto_sort_groups" (data=JSON groups definition),
-     *        "disable_mechanism" (data=filename to toggle).
+     *        "disable_mechanism" (data=filename to toggle),
+     *        "sort_provider" (data=reserved, fn receives mod list and returns sorted order + tags).
      */
     void (*register_hook)(GmmRegistrationCtx* ctx,
                           const char* tag,
@@ -154,7 +158,21 @@ struct GmmRegistrationCtx {
                           void (*invoke_fn)(void* user_data),
                           void* user_data);
 
-    /* Capability registration — tells UI which tabs to show for this game.
+    /* Sort provider — registers a mod sorting function for this game.
+     * sort_fn: receives an array of mod folder names and returns them
+     *          in the correct load order (top = loads first).
+     * tag_fn: optional callback to evaluate tags for a mod.
+     *         Takes (workshop_id, installed_ids, installed_count, user_data)
+     *         and returns a null-terminated array of {type, message} pairs.
+     */
+    void (*register_sort_provider)(GmmRegistrationCtx* ctx,
+                                   const char* game_id,
+                                   const char* const* (*sort_fn)(const char* const* mod_folders,
+                                                                 size_t count,
+                                                                 void* user_data),
+                                   void* user_data);
+
+    /* Capability registration — tells engine what features a game supports.
      * capability: "plugins", "archives", "saves", "downloads"
      * display_name: tab label (e.g. "Plugins")
      * data_path: relative path where these are stored (e.g. "Data/", "Documents/My Games/...")
@@ -169,6 +187,28 @@ struct GmmRegistrationCtx {
                                 const char* protocol_handler,
                                 const char* website_domain,
                                 const char* supported_platforms);
+
+    /* Tab registration — like register_capability but also declares UI tab ordering.
+     * capability: "plugins", "archives", "saves", "downloads", "conflicts", "data"
+     * display_name: tab label (e.g. "Plugins")
+     * data_path: relative path for storage
+     * description: human-readable hint
+     * For downloads: protocol_handler ("nxm", "workshop"), website_domain, supported_platforms
+     * insert_before: capability_id this tab should appear before (NULL = no constraint)
+     * insert_after:  capability_id this tab should appear after  (NULL = no constraint)
+     *   "data" is always present and can be used as an anchor.
+     *   Tabs with no constraints go last.
+     */
+    void (*register_tab)(GmmRegistrationCtx* ctx,
+                         const char* capability,
+                         const char* display_name,
+                         const char* data_path,
+                         const char* description,
+                         const char* protocol_handler,
+                         const char* website_domain,
+                         const char* supported_platforms,
+                         const char* insert_before,
+                         const char* insert_after);
 
     /* User data passed back to all callbacks */
     void* user_data;
