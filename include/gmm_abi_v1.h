@@ -99,6 +99,12 @@ typedef int (*GmmOrderEncodingFn)(const char* const* ordered_mod_ids,
                                   const char* output_path,
                                   void* user_data);
 
+/* -- Image diff callback — launches external tool to merge conflicting files */
+typedef void (*GmmImageDiffFn)(const char* const* source_paths,
+                                size_t source_count,
+                                const char* output_path,
+                                void* user_data);
+
 /* -- Deployment strategy callbacks -- */
 typedef int (*GmmDeployFn)(const char* source, const char* target, void* user_data);
 typedef int (*GmmRemoveFn)(const char* target, void* user_data);
@@ -157,6 +163,16 @@ struct GmmRegistrationCtx {
                           const char* kind,
                           void (*invoke_fn)(void* user_data),
                           void* user_data);
+
+    /* Image diff provider — merges conflicting files via external tool.
+     * fn: receives all mod versions of a conflicting file plus an output
+     *     path, launches the external tool, and writes the merged result.
+     *     source_paths: absolute paths to each mod's version of the file.
+     *     source_count: number of paths.
+     *     output_path:  where the merged result should be written. */
+    void (*register_image_diff)(GmmRegistrationCtx* ctx,
+                                GmmImageDiffFn fn,
+                                void* user_data);
 
     /* Sort provider — registers a mod sorting function for this game.
      * sort_fn: receives an array of mod folder names and returns them
