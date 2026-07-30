@@ -23,16 +23,16 @@
 extern "C" {
 #endif
 
-/* ── Version ── */
+/* -- Version -- */
 #define GMM_ABI_VERSION 1
 
-/* ── Opaque handles ── */
+/* -- Opaque handles -- */
 typedef struct GmmInstance* GmmInstanceHandle;
 typedef struct GmmMod* GmmModHandle;
 typedef struct GmmConflictIndex* GmmConflictIndexHandle;
 typedef struct GmmProfile* GmmProfileHandle;
 
-/* ── Enums ── */
+/* -- Enums -- */
 typedef enum {
     GMM_MOD_DOWNLOADED = 0,
     GMM_MOD_EXTRACTED  = 1,
@@ -50,18 +50,18 @@ typedef enum {
     GMM_INSTANCE_CONFIG    = 5,
 } GmmInstanceKind;
 
-/* ── Mod file info ── */
+/* -- Mod file info -- */
 typedef struct {
     const char* relative_path;
     uint64_t size;
 } GmmModFile;
 
-/* ── Instance API ── */
+/* -- Instance API -- */
 const char* gmm_instance_game_id(GmmInstanceHandle h);
 const char* gmm_instance_root(GmmInstanceHandle h);
 const char* gmm_instance_path_for(GmmInstanceHandle h, GmmInstanceKind kind);
 
-/* ── Mod API ── */
+/* -- Mod API -- */
 const char*      gmm_mod_id(GmmModHandle h);
 const char*      gmm_mod_name(GmmModHandle h);
 const char*      gmm_mod_version(GmmModHandle h);
@@ -70,7 +70,7 @@ void             gmm_mod_set_state(GmmModHandle h, GmmModState state);
 GmmModFile       gmm_mod_file_at(GmmModHandle h, size_t index);
 size_t           gmm_mod_file_count(GmmModHandle h);
 
-/* ── ConflictIndex API ── */
+/* -- ConflictIndex API -- */
 void gmm_conflict_add_file(GmmConflictIndexHandle h,
                            const char* relative_path,
                            const char* mod_id,
@@ -78,32 +78,32 @@ void gmm_conflict_add_file(GmmConflictIndexHandle h,
 void gmm_conflict_remove_mod(GmmConflictIndexHandle h, const char* mod_id);
 const char* gmm_conflict_winner(GmmConflictIndexHandle h, const char* relative_path);
 
-/* ── Profile API ── */
+/* -- Profile API -- */
 void     gmm_profile_add_mod(GmmProfileHandle h, const char* mod_id, int enabled);
 void     gmm_profile_remove_mod(GmmProfileHandle h, const char* mod_id);
 void     gmm_profile_set_enabled(GmmProfileHandle h, const char* mod_id, int enabled);
 void     gmm_profile_move_mod(GmmProfileHandle h, const char* mod_id, uint32_t new_position);
 uint32_t gmm_profile_priority_of(GmmProfileHandle h, const char* mod_id);
 
-/* ── Pipeline stage callback ── */
+/* -- Pipeline stage callback -- */
 typedef int (*GmmStageFn)(GmmModHandle mod, GmmInstanceHandle instance,
                           GmmConflictIndexHandle conflicts, GmmProfileHandle profile,
                           void* user_data);
 
-/* ── Hook callback — generic, tag-routed ── */
+/* -- Hook callback — generic, tag-routed -- */
 typedef void (*GmmHookFn)(const char* tag, void* data, void* user_data);
 
-/* ── Order encoding callback ── */
+/* -- Order encoding callback -- */
 typedef int (*GmmOrderEncodingFn)(const char* const* ordered_mod_ids,
                                   size_t count,
                                   const char* output_path,
                                   void* user_data);
 
-/* ── Deployment strategy callbacks ── */
+/* -- Deployment strategy callbacks -- */
 typedef int (*GmmDeployFn)(const char* source, const char* target, void* user_data);
 typedef int (*GmmRemoveFn)(const char* target, void* user_data);
 
-/* ── Registration context ── */
+/* -- Registration context -- */
 typedef struct GmmRegistrationCtx GmmRegistrationCtx;
 
 struct GmmRegistrationCtx {
@@ -214,11 +214,11 @@ struct GmmRegistrationCtx {
     void* user_data;
 };
 
-/* ── Plugin entry point ── */
+/* -- Plugin entry point -- */
 /* Called once after load. Plugin calls ctx->register_* as needed. */
 extern void gmm_register_v1(GmmRegistrationCtx* ctx);
 
-/* ── Version guard ── */
+/* -- Version guard -- */
 /* Host checks this after dlopen to verify ABI compatibility */
 extern uint32_t gmm_abi_version(void);
 
