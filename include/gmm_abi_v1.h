@@ -237,6 +237,15 @@ struct GmmRegistrationCtx {
                           const char* author,
                           const char* version,
                           const char* description);
+
+    /* Category — optional, appended last to stay binary-compatible with
+     * plugins compiled against older headers (they never call it).
+     * category: one of the MO2-style groups shown as foldable headers in
+     * the Plugins settings tab — e.g. "Game Support", "Installer", "Tool",
+     * "Diagnostics", "Preview", "File Mapper", "Mod Page", "Settings Page".
+     * NULL/empty = uncategorized (shown under "Uncategorized"). */
+    void (*register_category)(GmmRegistrationCtx* ctx,
+                              const char* category);
 };
 
 /* -- Plugin entry point -- */
