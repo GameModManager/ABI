@@ -228,6 +228,15 @@ struct GmmRegistrationCtx {
 
     /* User data passed back to all callbacks */
     void* user_data;
+
+    /* Metadata — optional, added after user_data to stay binary-compatible
+     * with plugins compiled against older headers (they never call it).
+     * author: human-readable author name(s); version: version string;
+     * description: one-line summary. Empty/NULL = unset. */
+    void (*register_meta)(GmmRegistrationCtx* ctx,
+                          const char* author,
+                          const char* version,
+                          const char* description);
 };
 
 /* -- Plugin entry point -- */
