@@ -246,6 +246,21 @@ struct GmmRegistrationCtx {
      * NULL/empty = uncategorized (shown under "Uncategorized"). */
     void (*register_category)(GmmRegistrationCtx* ctx,
                               const char* category);
+
+    /* Settings — optional, appended last to stay binary-compatible with
+     * plugins compiled against older headers (they never call it).
+     * Declares this plugin's user-facing options as plain key:value pairs
+     * (NOTHING special — no widget types, just a string key and a string
+     * default value). The engine renders them as editable key:value rows in
+     * a scrollable container in the Plugins settings tab and persists any
+     * user override. Source providers do NOT use this — their settings live
+     * in the Sources tab.
+     * keys[i] pairs with values[i] (the default value); count = pair count.
+     * NULL keys/values or count = 0 = no settings. */
+    void (*register_settings)(GmmRegistrationCtx* ctx,
+                              const char* const* keys,
+                              const char* const* values,
+                              size_t count);
 };
 
 /* -- Plugin entry point -- */
