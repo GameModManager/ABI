@@ -105,6 +105,15 @@ typedef void (*GmmImageDiffFn)(const char* const* source_paths,
                                 const char* output_path,
                                 void* user_data);
 
+/* -- Diagnostics callback — per-plugin diagnostic messages for the tooltip
+ *    (MO2 addInformation parity). Called once per plugin after the plugin
+ *    database refreshes. The engine clears the buffer before each call; the
+ *    plugin writes zero or more NUL-terminated messages into it. */
+typedef void (*GmmDiagnosticsFn)(const char* plugin_name,
+                                 char* out_buffer,
+                                 size_t out_capacity,
+                                 void* user_data);
+
 /* -- Deployment strategy callbacks -- */
 typedef int (*GmmDeployFn)(const char* source, const char* target, void* user_data);
 typedef int (*GmmRemoveFn)(const char* target, void* user_data);
@@ -261,6 +270,19 @@ struct GmmRegistrationCtx {
                               const char* const* keys,
                               const char* const* values,
                               size_t count);
+
+    /* Diagnostics — optional, appended last to stay binary-compatible with
+     * plugins compiled against older headers (they never call it).
+     * Registers a function the engine calls to collect diagnostic messages
+     * for each plugin in the Plugins tab (MO2 addInformation parity — the
+     * messages render in the plugin's hover tooltip below a <hr>).
+     * The function is invoked once per plugin after the plugin database
+     * refreshes; the engine clears the output buffer before each call and
+     * the plugin writes zero or more NUL-terminated messages into it.
+     * fn: (plugin_name, out_buffer, out_capacity, user_data) */
+    void (*register_diagnostics)(GmmRegistrationCtx* ctx,
+                                 GmmDiagnosticsFn fn,
+                                 void* user_data);
 };
 
 /* -- Plugin entry point -- */
