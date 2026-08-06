@@ -148,7 +148,9 @@ struct GmmRegistrationCtx {
      *        "metadata_parser" (data=reserved),
      *        "auto_sort_groups" (data=JSON groups definition),
      *        "disable_mechanism" (data=filename to toggle),
-     *        "sort_provider" (data=reserved, fn receives mod list and returns sorted order + tags).
+     *        "sort_provider" (data=reserved, fn receives mod list and returns sorted order + tags),
+     *        "game_icon_url" (data=icon URL the engine caches and displays in
+     *                         the instance switcher / game selector).
      */
     void (*register_hook)(GmmRegistrationCtx* ctx,
                           const char* tag,
