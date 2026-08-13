@@ -118,6 +118,13 @@ typedef void (*GmmDiagnosticsFn)(const char* plugin_name,
 typedef int (*GmmDeployFn)(const char* source, const char* target, void* user_data);
 typedef int (*GmmRemoveFn)(const char* target, void* user_data);
 
+/* -- Event subscription callback (P1.3) — receives (event_id, json_payload, user_data) */
+typedef void (*GmmEventFn)(const char* event_id, const char* payload, void* user_data);
+
+/* -- Host UI bridge (P1.4) — the plugin's Fomod stage handler asks the host
+ *    to run the FOMOD wizard + install; returns 1 on success, 0 on failure. */
+typedef int (*GmmFomodWizardFn)(GmmModHandle mod, char* out_json, size_t out_capacity);
+
 /* -- Registration context -- */
 typedef struct GmmRegistrationCtx GmmRegistrationCtx;
 
@@ -285,6 +292,55 @@ struct GmmRegistrationCtx {
     void (*register_diagnostics)(GmmRegistrationCtx* ctx,
                                  GmmDiagnosticsFn fn,
                                  void* user_data);
+
+    /* Event subscription (P1.3) — appended last to stay binary-compatible.
+     * fn receives (event_id, json_payload, user_data); the engine sources the
+     * subscription by plugin path and clears it on unload. */
+    void (*subscribe_event)(GmmRegistrationCtx* ctx,
+                            const char* event_id,
+                            GmmEventFn fn,
+                            void* user_data);
+
+    /* Game feature registration (P1.2) — appended last. Registers a typed
+     * game feature (mod_data_checker, game_plugins, ...) with a priority;
+     * NULL game_id = this plugin's own game. The two string arrays are
+     * generic payload slots interpreted per feature type. */
+    void (*register_game_feature)(GmmRegistrationCtx* ctx,
+                                  const char* game_id,
+                                  const char* feature_type,
+                                  int priority,
+                                  const char* const* folder_names,
+                                  size_t folder_count,
+                                  const char* const* file_extensions,
+                                  size_t extension_count);
+
+    /* Game feature data (P1.2) — appended last. Registers a structured-data
+     * feature as key/value pairs (the 7 MO2 feature classes). */
+    void (*register_game_feature_data)(GmmRegistrationCtx* ctx,
+                                       const char* game_id,
+                                       const char* feature_type,
+                                       int priority,
+                                       const char* const* keys,
+                                       const char* const* values,
+                                       size_t count);
+
+    /* Host UI bridge (P1.4) — appended last. The plugin's stage handler asks
+     * the host to run the FOMOD wizard + install through fomod_wizard. */
+    struct GmmHostUi {
+        GmmFomodWizardFn fomod_wizard;
+    } host_ui;
+
+    /* Typed settings tab (P1.5) — appended last. Declares one plugin settings
+     * tab; keys[i] pairs with types[i]/defaults[i]/options[i]; count = entry
+     * count. options carries only what each type needs (newline candidates
+     * for choice, min:max for int, else NULL). */
+    void (*register_settings_tab)(GmmRegistrationCtx* ctx,
+                                  const char* title,
+                                  const char* const* keys,
+                                  const char* const* types,
+                                  const char* const* defaults,
+                                  const char* const* options,
+                                  size_t count);
 };
 
 /* -- Plugin entry point -- */
