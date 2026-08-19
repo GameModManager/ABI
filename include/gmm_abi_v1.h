@@ -265,6 +265,19 @@ struct GmmRegistrationCtx {
     void (*register_category)(GmmRegistrationCtx* ctx,
                               const char* category);
 
+    /* Batch category registration — optional, appended last to stay
+     * binary-compatible with plugins compiled against older headers (they
+     * never call it). Registers multiple categories at once: ids[i] is the
+     * numeric id, names[i] is the display name, parent_ids[i] is the parent
+     * category id (-1 or 0 = top-level). count = number of categories.
+     * Used by the CategoryFactory merge path for bulk plugin category
+     * declarations. */
+    void (*register_categories)(GmmRegistrationCtx* ctx,
+                                const int* ids,
+                                const char* const* names,
+                                const int* parent_ids,
+                                size_t count);
+
     /* Settings — optional, appended last to stay binary-compatible with
      * plugins compiled against older headers (they never call it).
      * Declares this plugin's user-facing options as plain key:value pairs
