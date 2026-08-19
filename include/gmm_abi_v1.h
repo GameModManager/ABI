@@ -341,6 +341,20 @@ struct GmmRegistrationCtx {
                                   const char* const* defaults,
                                   const char* const* options,
                                   size_t count);
+
+    /* Wildcard stage claim — appended last to stay binary-compatible with
+     * plugins compiled against older headers (they never call it).
+     * Like register_stage_claim but with an explicit game_id so a plugin can
+     * claim a stage for ANY game (wildcard) or a specific game different from
+     * its own.  game_id: target game (NULL/empty = wildcard, applies to all
+     * games that don't have an exact-match claim).  Resolution priority:
+     * exact-match claims beat wildcard claims at equal priority, so a game-
+     * specific plugin always wins over a generic wildcard. */
+    void (*register_wildcard_stage_claim)(GmmRegistrationCtx* ctx,
+                                          const char* game_id,
+                                          const char* stage_name,
+                                          GmmStageFn fn,
+                                          int priority);
 };
 
 /* -- Plugin entry point -- */
