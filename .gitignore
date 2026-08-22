@@ -52,4 +52,5 @@ Mkfile.old
 dkms.conf
 
 # debug information files
+.DS_Store
 *.dwo
