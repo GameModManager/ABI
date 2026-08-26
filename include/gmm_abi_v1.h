@@ -114,6 +114,62 @@ typedef void (*GmmDiagnosticsFn)(const char* plugin_name,
                                  size_t out_capacity,
                                  void* user_data);
 
+/* -- Save parser callback -- */
+/* C-compatible save game struct filled by the plugin's parser. Strings are
+ * heap-allocated by the plugin; the engine takes ownership and frees them.
+ * Plugins_max and light_plugins_max bound the arrays; if the actual count
+ * exceeds the max, the parser should truncate. */
+#define GMM_SAVE_MAX_PLUGINS 512
+
+typedef struct {
+    char*    file_path;           /* heap-allocated */
+    char*    game_id;             /* heap-allocated, e.g. "skyrim", "skyrimse" */
+    int64_t  creation_time;       /* epoch seconds */
+    char*    pc_name;             /* heap-allocated */
+    uint16_t pc_level;
+    char*    pc_location;         /* heap-allocated */
+    uint32_t save_number;
+    char*    plugins[GMM_SAVE_MAX_PLUGINS];    /* heap-allocated strings */
+    uint32_t plugin_count;
+    char*    light_plugins[GMM_SAVE_MAX_PLUGINS]; /* heap-allocated strings */
+    uint32_t light_plugin_count;
+} GmmSaveGameC;
+
+/* Parser callback: takes a file path + game_id, fills out. Returns 1 on
+ * success, 0 on parse failure (engine skips the file). The plugin heap-
+ * allocates all string fields; the engine frees them. */
+typedef int (*GmmSaveParserFn)(const char* path, const char* game_id,
+                               GmmSaveGameC* out, void* user_data);
+
+/* -- Animation parser callback -- */
+#define GMM_ANIM_MAX_LAYERS 64
+#define GMM_ANIM_MAX_FRAMES 1024
+
+typedef struct {
+    float x, y;
+    int32_t width, height;
+    uint8_t* rgba_pixels;   /* heap-allocated RGBA pixel data */
+    size_t pixel_count;     /* width * height * 4 bytes */
+} GmmAnimationLayerC;
+
+typedef struct {
+    GmmAnimationLayerC* layers;
+    size_t layer_count;
+    int32_t delay_ms;
+} GmmAnimationFrameC;
+
+typedef struct {
+    GmmAnimationFrameC* frames;
+    size_t frame_count;
+    int32_t canvas_width, canvas_height, fps;
+} GmmAnimationDataC;
+
+/* Parser callback: takes file path + base_dir, fills out. Returns 1 on
+ * success, 0 on parse failure. The plugin heap-allocates all arrays; the
+ * engine frees them. */
+typedef int (*GmmAnimationParserFn)(const char* path, const char* base_dir,
+                                    GmmAnimationDataC* out, void* user_data);
+
 /* -- Deployment strategy callbacks -- */
 typedef int (*GmmDeployFn)(const char* source, const char* target, void* user_data);
 typedef int (*GmmRemoveFn)(const char* target, void* user_data);
@@ -336,6 +392,27 @@ struct GmmRegistrationCtx {
                                        const char* const* keys,
                                        const char* const* values,
                                        size_t count);
+
+    /* Save parser registration — appended last to stay binary-compatible.
+     * Registers a per-game save file parser. NULL game_id = this plugin's own
+     * game. The parser callback fills a GmmSaveGameC struct; the engine wraps
+     * it in a SaveParserFeature for the GameFeatureRegistry. */
+    void (*register_save_parser)(GmmRegistrationCtx* ctx,
+                                 const char* game_id,
+                                 GmmSaveParserFn fn,
+                                 int priority,
+                                 void* user_data);
+
+    /* Animation parser registration — appended last to stay binary-compatible.
+     * Registers a per-game animation file parser (e.g. Isaac .anm2). The parser
+     * callback fills a GmmAnimationDataC struct; the engine wraps it in an
+     * AnimationParserFeature for the GameFeatureRegistry. */
+    void (*register_animation_parser)(GmmRegistrationCtx* ctx,
+                                      const char* game_id,
+                                      const char* file_extension,
+                                      GmmAnimationParserFn fn,
+                                      int priority,
+                                      void* user_data);
 
     /* Host UI bridge (P1.4) — appended last. The plugin's stage handler asks
      * the host to run the FOMOD wizard + install through fomod_wizard. */
