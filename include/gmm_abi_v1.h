@@ -47,7 +47,8 @@ typedef enum {
     GMM_INSTANCE_DOWNLOADS = 2,
     GMM_INSTANCE_CACHE     = 3,
     GMM_INSTANCE_LOGS      = 4,
-    GMM_INSTANCE_CONFIG    = 5,
+    GMM_INSTANCE_CONFIG      = 5,
+    GMM_INSTANCE_MASTERLISTS = 6,
 } GmmInstanceKind;
 
 /* -- Mod file info -- */
@@ -127,6 +128,59 @@ typedef int (*GmmFomodWizardFn)(GmmModHandle mod, char* out_json, size_t out_cap
 
 /* -- Registration context -- */
 typedef struct GmmRegistrationCtx GmmRegistrationCtx;
+
+/* -- Save parser types (P1.6) -- */
+#define GMM_SAVE_MAX_PLUGINS 256
+
+typedef struct GmmSaveGameC {
+    char* file_path;
+    char* game_id;
+    int64_t creation_time;
+    char* pc_name;
+    int32_t pc_level;
+    char* pc_location;
+    uint32_t save_number;
+    uint32_t plugin_count;
+    char* plugins[GMM_SAVE_MAX_PLUGINS];
+    uint32_t light_plugin_count;
+    char* light_plugins[GMM_SAVE_MAX_PLUGINS];
+} GmmSaveGameC;
+
+/* Returns non-zero on success. Caller owns all heap allocations in out. */
+typedef int (*GmmSaveParserFn)(const char* path,
+                                const char* game_id,
+                                GmmSaveGameC* out,
+                                void* user_data);
+
+/* -- Animation parser types (P1.6) -- */
+typedef struct GmmAnimationLayerC {
+    int32_t x;
+    int32_t y;
+    int32_t width;
+    int32_t height;
+    uint8_t* rgba_pixels;
+    size_t pixel_count;
+} GmmAnimationLayerC;
+
+typedef struct GmmAnimationFrameC {
+    float delay_ms;
+    GmmAnimationLayerC* layers;
+    size_t layer_count;
+} GmmAnimationFrameC;
+
+typedef struct GmmAnimationDataC {
+    float fps;
+    int32_t canvas_width;
+    int32_t canvas_height;
+    GmmAnimationFrameC* frames;
+    size_t frame_count;
+} GmmAnimationDataC;
+
+/* Returns non-zero on success. Caller owns all heap allocations in out. */
+typedef int (*GmmAnimationParserFn)(const char* file_path,
+                                     const char* base_dir,
+                                     GmmAnimationDataC* out,
+                                     void* user_data);
 
 struct GmmRegistrationCtx {
     /* Identity — pure data, no behavior.
@@ -364,10 +418,28 @@ struct GmmRegistrationCtx {
      * exact-match claims beat wildcard claims at equal priority, so a game-
      * specific plugin always wins over a generic wildcard. */
     void (*register_wildcard_stage_claim)(GmmRegistrationCtx* ctx,
-                                          const char* game_id,
-                                          const char* stage_name,
-                                          GmmStageFn fn,
-                                          int priority);
+                                           const char* game_id,
+                                           const char* stage_name,
+                                           GmmStageFn fn,
+                                           int priority);
+
+    /* Save parser registration (P1.6) — appended last. Registers a save-file
+     * parser for the given game. fn is called with the save file path and
+     * game_id; it populates GmmSaveGameC. */
+    void (*register_save_parser)(GmmRegistrationCtx* ctx,
+                                  const char* game_id,
+                                  GmmSaveParserFn fn,
+                                  int priority,
+                                  void* user_data);
+
+    /* Animation parser registration (P1.6) — appended last. Registers an
+     * animation file parser for the given game and file extension. */
+    void (*register_animation_parser)(GmmRegistrationCtx* ctx,
+                                       const char* game_id,
+                                       const char* file_extension,
+                                       GmmAnimationParserFn fn,
+                                       int priority,
+                                       void* user_data);
 };
 
 /* -- Plugin entry point -- */
