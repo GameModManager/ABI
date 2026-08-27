@@ -108,7 +108,6 @@ typedef int (*GmmSaveParserFnV2)(const char* path, const char* game_id, GmmSaveD
 typedef void (*GmmToolInvokeFn)(void* user_data);
 typedef int (*GmmModPageDownloadFn)(const char* url, const char* output_path, void* user_data);
 typedef const char* const* (*GmmSortFn)(const char* const* mod_folders, size_t count, void* user_data);
-typedef int (*GmmFomodWizardFn)(void* mod, char* out_json, size_t out_capacity);
 
 /* -- Registration context (the main struct) -- */
 typedef struct GmmRegistrationCtxV2 {
@@ -138,7 +137,7 @@ typedef struct GmmRegistrationCtxV2 {
     void (*register_stage_claim)(GmmRegistrationCtxV2* ctx, const char* stage_name, GmmStageFnV2 fn, int priority);
     void (*register_wildcard_stage_claim)(GmmRegistrationCtxV2* ctx, const char* game_id, const char* stage_name, GmmStageFnV2 fn, int priority);
     struct GmmHostUi {
-        GmmFomodWizardFn fomod_wizard;
+        int (*fomod_wizard)(void* mod, char* out_json, size_t out_capacity);
     } host_ui;
 
     /* IPluginPreview */
