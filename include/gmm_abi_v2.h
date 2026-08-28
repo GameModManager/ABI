@@ -108,6 +108,7 @@ typedef int (*GmmSaveParserFnV2)(const char* path, const char* game_id, GmmSaveD
 typedef void (*GmmToolInvokeFn)(void* user_data);
 typedef int (*GmmModPageDownloadFn)(const char* url, const char* output_path, void* user_data);
 typedef const char* const* (*GmmSortFn)(const char* const* mod_folders, size_t count, void* user_data);
+typedef char* (*GmmResolveFileFn)(const char* root, const char* relative_path, void* user_data);
 
 /* -- Registration context (the main struct) -- */
 typedef struct GmmRegistrationCtxV2 {
@@ -151,6 +152,9 @@ typedef struct GmmRegistrationCtxV2 {
 
     /* IPluginSaveParser */
     void (*register_save_parser)(GmmRegistrationCtxV2* ctx, const char* game_id, GmmSaveParserFnV2 fn, int priority, void* user_data);
+    /* Host services -- resolve a case-sensitive relative path against a root */
+    GmmResolveFileFn resolve_file;
+    void* resolve_file_user_data;
 } GmmRegistrationCtxV2;
 
 /* -- Plugin entry point -- */
