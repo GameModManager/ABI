@@ -141,7 +141,7 @@ typedef struct GmmRegistrationCtxV2 {
     } host_ui;
 
     /* IPluginPreview */
-    void (*register_preview)(GmmRegistrationCtxV2* ctx, GmmPreviewInfo info, GmmPreviewFn fn, void* user_data);
+    void (*register_preview)(GmmRegistrationCtxV2* ctx, const char* file_extension, void* preview_data, GmmPreviewFn fn, void* user_data);
 
     /* IPluginTool */
     void (*register_tool)(GmmRegistrationCtxV2* ctx, const char* tool_id, const char* kind, GmmToolInvokeFn fn, void* user_data);
