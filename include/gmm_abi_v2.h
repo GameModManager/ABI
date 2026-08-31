@@ -109,12 +109,22 @@ typedef struct GmmAnimationFrameV2 {
     size_t layer_count;
 } GmmAnimationFrameV2;
 
+typedef struct GmmAnimationStateV2 {
+    char* name;
+    int32_t canvas_width;
+    int32_t canvas_height;
+    GmmAnimationFrameV2* frames;
+    size_t frame_count;
+} GmmAnimationStateV2;
+
 typedef struct GmmAnimationDataV2 {
     float fps;
     int32_t canvas_width;
     int32_t canvas_height;
     GmmAnimationFrameV2* frames;
     size_t frame_count;
+    GmmAnimationStateV2* states;
+    size_t state_count;
 } GmmAnimationDataV2;
 
 /* Returns non-zero on success. Caller owns all heap allocations in out. */
