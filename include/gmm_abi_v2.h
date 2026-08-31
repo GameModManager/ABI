@@ -93,6 +93,36 @@ typedef struct {
     char* light_plugins[GMM_SAVE_MAX_PLUGINS];
 } GmmSaveDataV2;
 
+/* -- Animation parser types -- */
+typedef struct GmmAnimationLayerV2 {
+    int32_t x;
+    int32_t y;
+    int32_t width;
+    int32_t height;
+    uint8_t* rgba_pixels;
+    size_t pixel_count;
+} GmmAnimationLayerV2;
+
+typedef struct GmmAnimationFrameV2 {
+    float delay_ms;
+    GmmAnimationLayerV2* layers;
+    size_t layer_count;
+} GmmAnimationFrameV2;
+
+typedef struct GmmAnimationDataV2 {
+    float fps;
+    int32_t canvas_width;
+    int32_t canvas_height;
+    GmmAnimationFrameV2* frames;
+    size_t frame_count;
+} GmmAnimationDataV2;
+
+/* Returns non-zero on success. Caller owns all heap allocations in out. */
+typedef int (*GmmAnimationParserFnV2)(const char* file_path,
+                                      const char* base_dir,
+                                      GmmAnimationDataV2* out,
+                                      void* user_data);
+
 /* -- Callback types -- */
 
 typedef void* (*GmmPreviewFn)(const char* file_path, void* preview_data, void* user_data);
@@ -152,6 +182,11 @@ typedef struct GmmRegistrationCtxV2 {
 
     /* IPluginSaveParser */
     void (*register_save_parser)(GmmRegistrationCtxV2* ctx, const char* game_id, GmmSaveParserFnV2 fn, int priority, void* user_data);
+
+    /* IPluginAnimationParser -- registers an animation file parser.
+     * NULL game_id = non-game-specific (applies to every game). */
+    void (*register_animation_parser)(GmmRegistrationCtxV2* ctx, const char* game_id, const char* file_extension, GmmAnimationParserFnV2 fn, int priority, void* user_data);
+
     /* Host services -- resolve a case-sensitive relative path against a root */
     GmmResolveFileFn resolve_file;
     void* resolve_file_user_data;
