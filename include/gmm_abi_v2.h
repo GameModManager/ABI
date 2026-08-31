@@ -109,12 +109,22 @@ typedef struct GmmAnimationFrameV2 {
     size_t layer_count;
 } GmmAnimationFrameV2;
 
+/* On-demand render callback: renders a single frame at the given time.
+ * raw_animation is the plugin-owned opaque pointer from GmmAnimationDataV2.
+ * time_ms is the time in milliseconds from the animation start.
+ * out_width/out_height receive the dimensions of the returned pixel buffer.
+ * Returns malloc'd RGBA pixels (caller frees), or NULL on failure. */
+typedef uint8_t* (*GmmAnimationRenderFn)(void* raw_animation, float time_ms,
+                                         int32_t* out_width, int32_t* out_height);
+
 typedef struct GmmAnimationStateV2 {
     char* name;
     int32_t canvas_width;
     int32_t canvas_height;
     GmmAnimationFrameV2* frames;
     size_t frame_count;
+    void* raw_animation; /* opaque pointer to plugin-owned raw keyframe data */
+    GmmAnimationRenderFn render_frame; /* on-demand render callback, or NULL */
 } GmmAnimationStateV2;
 
 typedef struct GmmAnimationDataV2 {
@@ -125,6 +135,8 @@ typedef struct GmmAnimationDataV2 {
     size_t frame_count;
     GmmAnimationStateV2* states;
     size_t state_count;
+    void* raw_animation; /* opaque pointer to plugin-owned raw keyframe data */
+    GmmAnimationRenderFn render_frame; /* on-demand render callback, or NULL */
 } GmmAnimationDataV2;
 
 /* Returns non-zero on success. Caller owns all heap allocations in out. */
