@@ -76,6 +76,19 @@ typedef struct {
     const char* message;
 } GmmPluginRequirement;
 
+/* -- Tab info for batched registration -- */
+typedef struct {
+    const char* capability;
+    const char* display_name;
+    const char* data_path;
+    const char* description;
+    const char* protocol_handler;
+    const char* website_domain;
+    const char* supported_platforms;
+    const char* insert_before;
+    const char* insert_after;
+} GmmTabInfo;
+
 /* -- Save game data -- */
 #define GMM_SAVE_MAX_PLUGINS 256
 
@@ -212,6 +225,20 @@ typedef struct GmmRegistrationCtxV2 {
     /* Host services -- resolve a case-sensitive relative path against a root */
     GmmResolveFileFn resolve_file;
     void* resolve_file_user_data;
+
+    /* -- Additive slots (v2.1+) -- old plugins ignore these -- */
+
+    /* Batched tab registration -- registers multiple tabs in one call.
+     * Preferred over repeated register_tab() for readability. */
+    void (*register_tabs)(GmmRegistrationCtxV2* ctx,
+                          const GmmTabInfo* tabs, size_t count);
+
+    /* Event subscription -- receive notifications for named events.
+     * The engine calls fn(event, data, user_data) when the event fires. */
+    void (*subscribe)(GmmRegistrationCtxV2* ctx, const char* event,
+                      void (*fn)(const char* event, void* data,
+                                 void* user_data),
+                      void* user_data);
 } GmmRegistrationCtxV2;
 
 /* -- Plugin entry point -- */
