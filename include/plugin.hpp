@@ -247,6 +247,27 @@ struct Ctx {
     return *this;
   }
 
+  // -- Game validator (IPluginGame::looksValid) --
+  Ctx& game_validator(const char* game_id, GmmLooksValidFn fn,
+                      void* user_data = nullptr) {
+    raw->register_game_validator(raw, game_id, fn, user_data);
+    return *this;
+  }
+
+  // -- Game variant (IPluginGame::setGameVariant, e.g. Steam/GOG/Epic) --
+  Ctx& game_variant(const char* game_id, const char* variant_id,
+                    const char* display_name) {
+    raw->register_game_variant(raw, game_id, variant_id, display_name);
+    return *this;
+  }
+
+  // -- Save overlay (per-game rich save info, generic data-driven widget) --
+  Ctx& save_overlay(const char* game_id, GmmSaveOverlayFnV2 fn,
+                    int priority = 100, void* user_data = nullptr) {
+    raw->register_save_overlay(raw, game_id, fn, priority, user_data);
+    return *this;
+  }
+
   // -- Settings --
   Ctx& settings(std::initializer_list<const char*> keys,
                 std::initializer_list<const char*> values) {
