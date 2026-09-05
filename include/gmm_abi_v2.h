@@ -22,7 +22,10 @@
 extern "C" {
 #endif
 
-/* -- Version -- */
+/* -- Version --
+ * A plugin written for v2 keeps working forever. Additive changes only ever
+ * append new fields or slots at the end; the engine never reads past what
+ * the plugin supports. There is no minor version - just v2. */
 #ifndef GMM_ABI_VERSION
 #define GMM_ABI_VERSION 2
 #endif
@@ -104,7 +107,53 @@ typedef struct {
     char* plugins[GMM_SAVE_MAX_PLUGINS];
     uint32_t light_plugin_count;
     char* light_plugins[GMM_SAVE_MAX_PLUGINS];
+
+    /* -- v2.1+ additive fields (appended at struct end; old plugins ignore) -- */
+
+    /* Screenshot: raw RGBA pixels, top-down row-major, row stride = width*4.
+     * Ownership: plugin mallocs both the pixel buffer AND sets width/height;
+     * engine copies the pixels into its own buffer and frees the plugin's
+     * allocation. Set to NULL/0 when no screenshot is available. */
+    uint8_t* screenshot_rgba;
+    size_t screenshot_size;
+    int32_t screenshot_width;
+    int32_t screenshot_height;
+
+    /* Medium plugins (Bethesda ESL-flagged ESMs - Starfield, FO4).
+     * Empty for games without medium plugin support (Skyrim, SkyrimSE).
+     * Strings are malloc'd by the plugin; engine frees. */
+    uint32_t medium_plugin_count;
+    char* medium_plugins[GMM_SAVE_MAX_PLUGINS];
+
+    /* Full set of files tied to this save: ess + co-saves (.fos, .fcz) +
+     * facegen (.tri, .trd, .nif) + any script extender files. Used by save
+     * transfer/copy/delete and the missing-assets widget.
+     * Ownership: plugin mallocs the outer char** array AND each string;
+     * engine frees both. all_files_count is the number of strings. */
+    uint32_t all_files_count;
+    char** all_files;
 } GmmSaveDataV2;
+
+/* -- Save overlay (data-driven per-game rich info, MO2 ISaveGameInfoWidget
+ * equivalent). The engine renders a generic widget from these rows; the C ABI
+ * carries no Qt or UI types. Plugin builds the overlay on demand; engine owns
+ * the rendered widget and frees the overlay when the save is dropped. */
+typedef struct {
+    char* title;                /* human-readable panel title */
+    char* subtitle;             /* optional secondary line (e.g. "Level 47 Nord") */
+    /* Key/value rows shown in the generic widget. Keys and values are parallel
+     * arrays of length kv_count; both strings are malloc'd by the plugin,
+     * engine frees. */
+    char** kv_keys;
+    char** kv_values;
+    uint32_t kv_count;
+} GmmSaveOverlayV2;
+
+/* Builds a save overlay for a given parsed save. Returns malloc'd overlay
+ * (engine frees all strings + the struct itself), or NULL if no overlay data
+ * is available for this save. */
+typedef GmmSaveOverlayV2* (*GmmSaveOverlayFnV2)(const GmmSaveDataV2* save,
+                                                void* user_data);
 
 /* -- Animation parser types -- */
 typedef struct GmmAnimationLayerV2 {
@@ -170,6 +219,9 @@ typedef int (*GmmOrderEncodingFnV2)(const char* const* ordered_mod_ids, size_t c
 typedef int (*GmmDeployFnV2)(const char* source, const char* target, void* user_data);
 typedef int (*GmmRemoveFnV2)(const char* target, void* user_data);
 typedef int (*GmmSaveParserFnV2)(const char* path, const char* game_id, GmmSaveDataV2* out, void* user_data);
+/* Per-game validator: tests whether a directory looks like a valid game install.
+ * Mirrors MO2 IPluginGame::looksValid(QDir) -> bool. Returns non-zero when valid. */
+typedef int (*GmmLooksValidFn)(const char* game_dir, void* user_data);
 typedef void (*GmmToolInvokeFn)(void* user_data);
 typedef int (*GmmModPageDownloadFn)(const char* url, const char* output_path, void* user_data);
 typedef const char* const* (*GmmSortFn)(const char* const* mod_folders, size_t count, void* user_data);
@@ -226,7 +278,7 @@ typedef struct GmmRegistrationCtxV2 {
     GmmResolveFileFn resolve_file;
     void* resolve_file_user_data;
 
-    /* -- Additive slots (v2.1+) -- old plugins ignore these -- */
+    /* -- Additive slots -- old plugins ignore these -- */
 
     /* Batched tab registration -- registers multiple tabs in one call.
      * Preferred over repeated register_tab() for readability. */
@@ -239,6 +291,30 @@ typedef struct GmmRegistrationCtxV2 {
                       void (*fn)(const char* event, void* data,
                                  void* user_data),
                       void* user_data);
+
+    /* Register a per-game validator that tests whether a directory looks like
+     * a valid game install. Mirrors IPluginGame::looksValid(QDir) -> bool.
+     * Called during game detection; engine invokes fn(game_dir, user_data) and
+     * expects a non-zero return when the path is a valid game. */
+    void (*register_game_validator)(GmmRegistrationCtxV2* ctx, const char* game_id,
+                                    GmmLooksValidFn fn, void* user_data);
+
+    /* Register a named game variant (e.g. "Steam", "GOG", "Epic" for SkyrimSE).
+     * The engine uses variant_id to disambiguate instances and offers the
+     * display_name in the UI. Multiple variants per game_id are allowed.
+     * Mirrors IPluginGame::setGameVariant(variant, displayName). */
+    void (*register_game_variant)(GmmRegistrationCtxV2* ctx, const char* game_id,
+                                  const char* variant_id,
+                                  const char* display_name);
+
+    /* Register a per-game save overlay builder. The engine calls fn(save,
+     * user_data) for each parsed save and renders the returned overlay in the
+     * Saves tab using a generic data-driven widget (no Qt types cross the
+     * ABI). Plugins that don't register an overlay fall back to the engine's
+     * default metadata view. */
+    void (*register_save_overlay)(GmmRegistrationCtxV2* ctx, const char* game_id,
+                                  GmmSaveOverlayFnV2 fn, int priority,
+                                  void* user_data);
 } GmmRegistrationCtxV2;
 
 /* -- Plugin entry point -- */
