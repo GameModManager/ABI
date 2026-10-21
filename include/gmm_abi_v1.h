@@ -16,6 +16,16 @@
 #ifndef GMM_ABI_V1_H
 #define GMM_ABI_V1_H
 
+/*
+ * FROZEN ABI (v3 Phase P0):
+ * Everything below this comment is frozen. Existing struct fields, callback
+ * signatures, enum values and their order must never change. Additive
+ * evolution only: new fields append at the end of a struct, new callbacks
+ * append at the end of the context. Renames, reorders, type changes and
+ * removals are forbidden. Compiled v1 plugins link against these exact
+ * layouts; any break silently corrupts their registration.
+ */
+
 #include <stdint.h>
 #include <stddef.h>
 

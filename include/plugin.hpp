@@ -27,6 +27,15 @@
 #ifndef GMM_PLUGIN_HPP
 #define GMM_PLUGIN_HPP
 
+/*
+ * FROZEN WRAPPER (v3 Phase P0):
+ * This header is frozen together with gmm_abi_v2.h. It adds zero C ABI slots
+ * and must stay that way. Existing C++ struct fields, helper signatures and
+ * default values must never change; additive helpers only. Compiled plugins
+ * inline this header, so any layout or default change silently corrupts
+ * their registration.
+ */
+
 #include "gmm_abi_v2.h"
 
 #include <cstdint>
