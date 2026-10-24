@@ -146,30 +146,31 @@ private:
   static GmmInvokeFn invoke_for() {
     if constexpr (std::is_base_of_v<cap::SaveParser, C>)
       return &cap::save_parser_thunk<C>;
-    else if constexpr (std::is_base_of_v<cap::SaveOverlay, C>)
+    if constexpr (std::is_base_of_v<cap::SaveOverlay, C>)
       return &cap::save_overlay_thunk<C>;
-    else if constexpr (std::is_base_of_v<cap::FilePreview, C>)
+#if GMM_HAS_QT
+    if constexpr (std::is_base_of_v<cap::FilePreview, C>)
       return &cap::file_preview_thunk<C>;
-    else if constexpr (std::is_base_of_v<cap::AnimationParser, C>)
+#endif
+    if constexpr (std::is_base_of_v<cap::AnimationParser, C>)
       return &cap::animation_parser_thunk<C>;
-    else if constexpr (std::is_base_of_v<cap::SortProvider, C>)
+    if constexpr (std::is_base_of_v<cap::SortProvider, C>)
       return &cap::sort_provider_thunk<C>;
-    else if constexpr (std::is_base_of_v<cap::Tool, C>)
+    if constexpr (std::is_base_of_v<cap::Tool, C>)
       return &cap::tool_thunk<C>;
-    else if constexpr (std::is_base_of_v<cap::StageClaim, C>)
+    if constexpr (std::is_base_of_v<cap::StageClaim, C>)
       return &cap::installer_stage_thunk<C>;
-    else if constexpr (std::is_base_of_v<cap::DetectionValidator, C>)
+    if constexpr (std::is_base_of_v<cap::DetectionValidator, C>)
       return &cap::detection_validator_thunk<C>;
-    else if constexpr (std::is_base_of_v<cap::EventSubscriber, C>)
+    if constexpr (std::is_base_of_v<cap::EventSubscriber, C>)
       return &cap::event_subscriber_thunk<C>;
-    else if constexpr (std::is_base_of_v<cap::Diagnostics, C>)
+    if constexpr (std::is_base_of_v<cap::Diagnostics, C>)
       return &cap::ui_diagnostics_thunk<C>;
-    else if constexpr (std::is_base_of_v<cap::UiSettings, C>)
+    if constexpr (std::is_base_of_v<cap::UiSettings, C>)
       return &cap::ui_settings_thunk<C>;
-    else if constexpr (std::is_base_of_v<cap::OrderEncoding, C>)
+    if constexpr (std::is_base_of_v<cap::OrderEncoding, C>)
       return &cap::load_order_thunk<C>;
-    else
-      return nullptr;
+    return nullptr;
   }
 
   GmmHostServices host_;

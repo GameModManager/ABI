@@ -1,11 +1,21 @@
 #ifndef GMM_CAP_FILE_PREVIEW_H
 #define GMM_CAP_FILE_PREVIEW_H
+
 #include "../capability.h"
 #include "../version.h"
 #include <gmm_abi_v3.h>
+
+#if __has_include(<QWidget>)
 #include <QWidget>
+#define GMM_HAS_QT 1
+#else
+#define GMM_HAS_QT 0
+#endif
+
 #include <filesystem>
 #include <string_view>
+
+#if GMM_HAS_QT
 namespace gmm { namespace cap {
 struct FilePreview : Capability {
   static constexpr const char *kId = GMM_CAPID_PREVIEW_FILE;
@@ -26,3 +36,5 @@ int32_t file_preview_thunk(void *self, uint32_t method, void *args, void *out) {
 }
 } }
 #endif
+
+#endif /* GMM_CAP_FILE_PREVIEW_H */

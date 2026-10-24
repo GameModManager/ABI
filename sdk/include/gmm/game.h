@@ -1,6 +1,13 @@
 #ifndef GMM_GAME_H
 #define GMM_GAME_H
 
+#ifdef linux
+#undef linux
+#endif
+#ifdef unix
+#undef unix
+#endif
+
 #include "version.h"
 
 #include <cstdint>
